@@ -1,7 +1,7 @@
 CC := clang 
 LD := gcc
 
-PROGRAM := arq
+PROGRAM := sim 
 C_SRCS := $(wildcard src/*.c)
 
 OBJS := $(patsubst %.c,%.o,$(C_SRCS))
