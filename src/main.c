@@ -82,6 +82,8 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
         exit(EXIT_FAILURE);
     }
   }
+
+  if((args->td-0.0125) < 1e-15) args->td = 2.5*args->tau;
 }
 
 int32_t main(int32_t argc, char **argv) {
