@@ -18,16 +18,16 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
   char *optstring = "P:N:c:l:h:t:b:d:n";
   
   if(argc == 1) {
-    fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
+    fprintf(stderr, "Usage: %s [-S npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
   for(int32_t opt = getopt(argc, argv, optstring); opt != -1; opt = getopt(argc, argv, optstring)) {
     switch(opt) {
-      case 'P':
+      case 'S':
         {
-          uint64_t P = strtoull(optarg, NULL, 0);
-          if(P != 0) args->P = P;
+          uint64_t S = strtoull(optarg, NULL, 0);
+          if(S != 0) args->S = S;
           break;
         }
       case 'N':
@@ -78,7 +78,7 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
           break;
         }
       default:
-        fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-S npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
@@ -101,7 +101,7 @@ int32_t main(int32_t argc, char **argv) {
     printf("====================================================================================================\n");
 
     printf("\nSIMULATOR\n{\n\ttype:\t%-25s (%s)\n}\n\n", simulator_types[sim_type][0], simulator_types[sim_type][1]); 
-    printf("\nINPUTS\n{\n\tP:\t%-25llu (Simulation period [successful packets])"
+    printf("\nINPUTS\n{\n\tS:\t%-25llu (Simulation period [successful packets])"
         "\n\ttd:\t%-25f (Timeout period)"
         "\n\tN:\t%-25llu (Window size [packets])"
         "\n\tber:\t%-25f (Bit Error Rate)"
@@ -111,7 +111,7 @@ int32_t main(int32_t argc, char **argv) {
         "\n\ttau:\t%-25f (Propagation delay [s])"
         "\n\td:\t%-25f (The ratio of td/tau)"
         "\n\tnak:\t%-25s (Is NAK enabled?)\n}\n\n", 
-        inputs.P,inputs.td,inputs.N,inputs.ber,inputs.C,inputs.H,inputs.l,inputs.tau,inputs.td/inputs.tau,inputs.nak ? "yes" : "no");
+        inputs.S,inputs.td,inputs.N,inputs.ber,inputs.C,inputs.H,inputs.l,inputs.tau,inputs.td/inputs.tau,inputs.nak ? "yes" : "no");
   
     sim_gen_timeout(&state, &inputs);
     sim_send(&state, &inputs, &outputs);

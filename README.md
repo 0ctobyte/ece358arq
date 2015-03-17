@@ -6,9 +6,9 @@ Just run `make` in the top-level directory
 And `make clean` to remove compiled object files and other generated data files 
 
 ## Usage
-Usage: `./sim [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]
+Usage: `./sim [-S npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]
 
-* `-P` (Number of packets that need to be sent successfully for the simulator to terminate)
+* `-S` (Number of packets that need to be sent successfully for the simulator to terminate)
 * `-N` (The window size in packets. If this is set to 1 then ABP simulation is selected, otherwise GBN simulation will be performed)
 * `-c` (The simulated link rate of the channel in bps)
 * `-l` (The length of a packet in bytes)

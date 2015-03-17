@@ -33,7 +33,7 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
   if(state->event.time < state->td) return;
 
   // If the # of successfully sent packets is enough, then don't transmit anymore frames
-  if(state->Ns == inputs->P) return;
+  if(state->Ns == inputs->S) return;
 
   // Update the sender's time
   state->tc = state->event.time;
@@ -55,7 +55,7 @@ void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outp
     ++state->Ns;
 
     // If the # of successfully sent packets is enough, then don't transmit anymore frames
-    if(state->Ns == inputs->P) {
+    if(state->Ns == inputs->S) {
       outputs->tput = (double)(inputs->l*8*state->Ns)/state->tc;
       return;
     }

@@ -4,14 +4,14 @@
 #include <stdint.h>
 #include "es.h"
 
-#define INPUTS_DEFAULT {.P=10000,.td=2.5*0.005,.N=1,.ber=0.0,.tau=0.005,.H=54,.l=1500,.C=5000000,.nak=false};
+#define INPUTS_DEFAULT {.S=10000,.td=2.5*0.005,.N=1,.ber=0.0,.tau=0.005,.H=54,.l=1500,.C=5000000,.nak=false};
 #define STATE_DEFAULT {.sn=0,.nack=1,.nsn=0,.tc=0.0,.tcs=0.0,.td=0.0,.Np=0,.Ns=0,.Nt=0,.event={0,0.0,0,false},es_pq_create(10)}
 #define OUTPUTS_DEFAULT {0}
 
 // Inputs into the simulator
 typedef struct {
-  // Period of simulation, i.e. Simulate till P, the # of successfully delivered packets
-  uint64_t P;
+  // Period of simulation, i.e. Simulate till S, the # of successfully delivered packets
+  uint64_t S;
   
   // The timeout delta in milliseconds
   double td;
