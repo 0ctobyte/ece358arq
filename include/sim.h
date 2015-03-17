@@ -4,9 +4,9 @@
 #include <stdint.h>
 #include "es.h"
 
-#define INPUTS_DEFAULT {.P=10000,.td=2.5*0.010,.N=1,.ber=0.0,.tau=0.010,.H=54,.l=1500,.C=5000000,.nak=false};
-#define STATE_DEFAULT {.sn=0,.nack=1,.nsn=0,.tc=0.0,.tcs=0.0,.td=0.0,.event={0,0.0,0,false},es_pq_create(10)}
-#define OUTPUTS_DEFAULT {0,0,0}
+#define INPUTS_DEFAULT {.P=10000,.td=2.5*0.005,.N=1,.ber=0.0,.tau=0.005,.H=54,.l=1500,.C=5000000,.nak=false};
+#define STATE_DEFAULT {.sn=0,.nack=1,.nsn=0,.tc=0.0,.tcs=0.0,.td=0.0,.Np=0,.Ns=0,.Nt=0,.event={0,0.0,0,false},es_pq_create(10)}
+#define OUTPUTS_DEFAULT {0}
 
 // Inputs into the simulator
 typedef struct {
@@ -58,14 +58,6 @@ typedef struct {
   // New timeout value. This is used to invalidate old timeout events in the ES
   double td;
 
-  // Current event being processed
-  es_event_t event;
-
-  // Discrete event scheduler
-  es_pq_t *es;
-} sim_state_t;
-
-typedef struct {
   // Total # of packets sent
   uint64_t Np;
   
@@ -74,10 +66,21 @@ typedef struct {
 
   // Number of timeouts
   uint64_t Nt;
+
+  // Current event being processed
+  es_event_t event;
+
+  // Discrete event scheduler
+  es_pq_t *es;
+} sim_state_t;
+
+typedef struct {
+  // The throughput in bits/sec
+  double tput;
 } sim_outputs_t;
 
-// Generate ACK event in the ES
-void sim_gen_ack(sim_state_t *state, sim_inputs_t *inputs);
+// Generate ACK event in the ES with the given parameters
+void sim_gen_ack(sim_state_t *state, double time, uint64_t rn, bool has_errors);
 
 // Generate TIMEOUT event in the ES
 void sim_gen_timeout(sim_state_t *state, sim_inputs_t *inputs);
@@ -87,5 +90,8 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
 
 // Handle ACK event
 void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs);
+
+// Simulate packet sending
+void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs);
 
 #endif // __SIM_H__

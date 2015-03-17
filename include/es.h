@@ -14,7 +14,7 @@ typedef struct es_event {
 	es_type_t event_type;
 	double time;
   uint64_t rn; // ACK sequence number
-  bool has_errors;
+  bool corrupted;
 } es_event_t;
 
 typedef struct es_pq es_pq_t;

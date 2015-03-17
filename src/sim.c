@@ -1,42 +1,26 @@
 #include "sim.h"
 
-typedef enum {
-  NOERROR,
-  ERROR,
-  LOST
-} error_t;
+typedef struct {
+  bool lost;
+  bool corrupted;
+  uint64_t sn;
+  double time;
+} sim_channel_t;
 
-void sim_gen_ack(sim_state_t *state, sim_inputs_t *inputs) {
-  // First get the probability that the sent frame is received correctly
-  error_t e = NOERROR;
-  // has_error = channel(state->tc, state->sn, inputs->H+inputs->l);
-  
-  // The receiver receives the frame at time tcs
-  state->tcs = state->tc + inputs->tau;
+sim_channel_t _sim_channel(double tau, double tc, uint64_t sn, uint64_t flen) {
+  sim_channel_t e = {.lost=false, .time=tc+tau, .sn=sn, .corrupted=false};
+  return e;
+}
 
-  // If the receiver receives a frame without error, increment the next expected frame
-  if(e == NOERROR && state->sn == state->nsn) {
-    state->nsn = (state->nsn+1) % (inputs->N+1);
-  }
-
-  // Get the probability that the ack frame is sent correctly
-  e = NOERROR;
-  // e = channel(state->tcs, state->nsn, inputs->H);
-
-  // The sender receives the ack at time tc
-  state->tc = state->tcs + inputs->tau;
-
-  // If the ack is lost, don't create an event
-  if(e == LOST) return;
-
-  es_event_t ack = {.event_type = ACK, .time = state->tc, .rn = state->nsn, .has_errors = (e == NOERROR) ? false : true};
+void sim_gen_ack(sim_state_t *state, double time, uint64_t rn, bool corrupted) {
+  es_event_t ack = {.event_type = ACK, .time = time, .rn = rn, .corrupted = corrupted};
   es_pq_enqueue(state->es, ack);
 }
 
 void sim_gen_timeout(sim_state_t *state, sim_inputs_t *inputs) {
   double transmission_delay = ((double)(inputs->H+inputs->l))/inputs->C;
   state->td = state->tc + transmission_delay + inputs->td;
-  es_event_t timeout = {.event_type = TIMEOUT, .time = state->td, .rn = 0, .has_errors = false};
+  es_event_t timeout = {.event_type = TIMEOUT, .time = state->td, .rn = state->sn, .corrupted = false};
   es_pq_enqueue(state->es, timeout);
 }
 
@@ -44,24 +28,71 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
   // Check if the timeout event is invalid
   if(state->event.time < state->td) return;
 
-  ++outputs->Nt;
+  // If the # of successfully sent packets is enough, then don't transmit anymore frames
+  if(state->Ns == inputs->P) return;
 
-  // Generate new timeout event and simulate the sending of the new 'frame' with sim_gen_ack
+  // Update the sender's time
+  state->tc = state->event.time;
+  ++state->Nt;
+
+  // Retransmit the frame
   sim_gen_timeout(state, inputs);
-  sim_gen_ack(state, inputs);
+  sim_send(state, inputs, outputs);
 }
 
 void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
+  // Update the sender's time
+  state->tc = state->event.time;
+
   // If the sender has received an ack without error, increment sequence number and next expected ack
-  if(state->event.has_errors == false && state->event.rn == state->nack) {
+  if(!state->event.corrupted && state->event.rn == state->nack) {
     state->sn = (state->sn+1) % (inputs->N+1);
     state->nack = (state->nack+1) % (inputs->N+1);
-    ++outputs->Ns;
+    ++state->Ns;
+
+    // If the # of successfully sent packets is enough, then don't transmit anymore frames
+    if(state->Ns == inputs->P) return;
+
+    // Transmit the next frame
+    sim_gen_timeout(state, inputs);
+    sim_send(state, inputs, outputs);
+  } else if(state->event.corrupted && inputs->nak) {
+    // If the ACK frame is corrupted but NAK retransmission is enabled, resend the frame
+    sim_gen_timeout(state, inputs);
+    sim_send(state, inputs, outputs);
   }
-  
-  ++outputs->Np;
-  // send next frame (generate timeout for new frame)
-  sim_gen_timeout(state, inputs);
-  sim_gen_ack(state, inputs);
+}
+
+void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
+  ++state->Np;
+
+  // First the sent frame must be passed through the channel
+  double transmission_delay = ((double)(inputs->H+inputs->l))/inputs->C;
+  sim_channel_t e = _sim_channel(inputs->tau, state->tc+transmission_delay, state->sn, inputs->H+inputs->l);
+ 
+  // If the frame is lost, nothing to do
+  if(e.lost) return;
+
+  /* BEGIN RECIEVER */
+
+  // The receiver receives the frame at time tcs
+  state->tcs = e.time;
+
+  // If the receiver receives a frame without error, increment the next expected frame
+  if(!e.corrupted && e.sn == state->nsn) {
+    state->nsn = (state->nsn+1) % (inputs->N+1);
+  }
+
+  /* END RECIEVER */
+
+  // The ACK frame must be passed through the channel
+  transmission_delay = (double)inputs->H/inputs->C;
+  e = _sim_channel(inputs->tau, state->tcs+transmission_delay, state->nsn, inputs->H);
+
+  // If the ack is lost, don't create an event
+  if(e.lost) return;
+
+  // Generate the ACK event (with or without errors)
+  sim_gen_ack(state, e.time, e.sn, e.corrupted);
 }
 
