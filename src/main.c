@@ -18,7 +18,7 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
   char *optstring = "P:N:c:l:h:t:b:d:n";
   
   if(argc == 1) {
-    fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout_multiplier] [-n]\n", argv[0]);
+    fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
@@ -78,7 +78,7 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
           break;
         }
       default:
-        fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout_multiplier] [-n]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
@@ -109,8 +109,9 @@ int32_t main(int32_t argc, char **argv) {
         "\n\tH:\t%-25llu (Frame header size [bytes])"
         "\n\tl:\t%-25llu (Packet length [bytes])"
         "\n\ttau:\t%-25f (Propagation delay [s])"
+        "\n\td:\t%-25f (The ratio of td/tau)"
         "\n\tnak:\t%-25s (Is NAK enabled?)\n}\n\n", 
-        inputs.P,inputs.td,inputs.N,inputs.ber,inputs.C,inputs.H,inputs.l,inputs.tau, inputs.nak ? "yes" : "no");
+        inputs.P,inputs.td,inputs.N,inputs.ber,inputs.C,inputs.H,inputs.l,inputs.tau,inputs.td/inputs.tau,inputs.nak ? "yes" : "no");
   
     sim_gen_timeout(&state, &inputs);
     sim_send(&state, &inputs, &outputs);

@@ -63,7 +63,7 @@ void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outp
     // Transmit the next frame
     sim_gen_timeout(state, inputs);
     sim_send(state, inputs, outputs);
-  } else if(state->event.corrupted && inputs->nak) {
+  } else if(inputs->nak) {
     // If the ACK frame is corrupted but NAK retransmission is enabled, resend the frame
     sim_gen_timeout(state, inputs);
     sim_send(state, inputs, outputs);
