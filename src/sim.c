@@ -1,4 +1,5 @@
 #include "sim.h"
+#include "rv.h"
 
 typedef struct {
   bool lost;
@@ -7,8 +8,11 @@ typedef struct {
   double time;
 } sim_channel_t;
 
-sim_channel_t _sim_channel(double tau, double tc, uint64_t sn, uint64_t flen) {
-  sim_channel_t e = {.lost=false, .time=tc+tau, .sn=sn, .corrupted=false};
+sim_channel_t _sim_channel(double BER, double tau, double tc, uint64_t sn, uint64_t L) {
+  // Generate bit error probabilities for each of the L bits
+  uint64_t biterr_count = 0;
+  for(uint64_t i = 0; i < L; ++i) biterr_count += (rv_uniform() < BER) ? 1 : 0; 
+  sim_channel_t e = {.lost=(biterr_count > 4) ? true : false, .time=tc+tau, .sn=sn, .corrupted=(biterr_count > 0) ? true : false};
   return e;
 }
 
@@ -51,7 +55,10 @@ void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outp
     ++state->Ns;
 
     // If the # of successfully sent packets is enough, then don't transmit anymore frames
-    if(state->Ns == inputs->P) return;
+    if(state->Ns == inputs->P) {
+      outputs->tput = (double)(inputs->l*8*state->Ns)/state->tc;
+      return;
+    }
 
     // Transmit the next frame
     sim_gen_timeout(state, inputs);
@@ -67,8 +74,8 @@ void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) 
   ++state->Np;
 
   // First the sent frame must be passed through the channel
-  double transmission_delay = ((double)(inputs->H+inputs->l))/inputs->C;
-  sim_channel_t e = _sim_channel(inputs->tau, state->tc+transmission_delay, state->sn, inputs->H+inputs->l);
+  double transmission_delay = ((double)(inputs->H+inputs->l)*8.0)/inputs->C;
+  sim_channel_t e = _sim_channel(inputs->ber, inputs->tau, state->tc+transmission_delay, state->sn, (inputs->H+inputs->l)*8);
  
   // If the frame is lost, nothing to do
   if(e.lost) return;
@@ -86,8 +93,8 @@ void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) 
   /* END RECIEVER */
 
   // The ACK frame must be passed through the channel
-  transmission_delay = (double)inputs->H/inputs->C;
-  e = _sim_channel(inputs->tau, state->tcs+transmission_delay, state->nsn, inputs->H);
+  transmission_delay = (double)(inputs->H*8)/inputs->C;
+  e = _sim_channel(inputs->ber, inputs->tau, state->tcs+transmission_delay, state->nsn, inputs->H*8);
 
   // If the ack is lost, don't create an event
   if(e.lost) return;

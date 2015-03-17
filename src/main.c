@@ -132,8 +132,6 @@ int32_t main(int32_t argc, char **argv) {
       }
     } 
 
-    outputs.tput = (double)(inputs.l*8*state.Ns)/state.tcs;
-
     printf("\nSTATE\n{\n\tsn:\t%-25llu (Sequence number of sent packet)"
         "\n\tnack:\t%-25llu (Next expected ACK #)"
         "\n\tnsn:\t%-25llu (Next expected sequence #)"
