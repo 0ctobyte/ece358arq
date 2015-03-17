@@ -91,8 +91,6 @@ int32_t main(int32_t argc, char **argv) {
 
     parse_cmdline_args(argc, argv, &inputs);
 
-    inputs.td = 2.5*inputs.tau;
-
     uint64_t sim_type = (inputs.N == 1) ? ((inputs.nak) ? 1 : 0) : 2;
 
     sim_state_t state = STATE_DEFAULT;
