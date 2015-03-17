@@ -6,7 +6,7 @@ Just run `make` in the top-level directory
 And `make clean` to remove compiled object files and other generated data files 
 
 ## Usage
-Usage: `./sim [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout] [-n]
+Usage: `./sim [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout_multiplier] [-n]
 
 * `-P` (Number of packets that need to be sent successfully for the simulator to terminate)
 * `-N` (The window size in packets. If this is set to 1 then ABP simulation is selected, otherwise GBN simulation will be performed)
@@ -15,7 +15,7 @@ Usage: `./sim [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t ta
 * `-h` (The length of the frame header in bytes)
 * `-t` (Tau, the propagation delay of the channel in seconds)
 * `-b` (The bit error rate (0<=BER<1). Set to 0 for no bit errors)
-* `-d` (The timeout (wait) period for the sender)
+* `-d` (The sender's timeout period is set to this value times tau)
 * `-n` (Specify NAK retransmission. If N=1 and this option is given, then the simulator used will be ABP_NAK)
 
 ## Code

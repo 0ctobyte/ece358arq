@@ -18,7 +18,7 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
   char *optstring = "P:N:c:l:h:t:b:d:n";
   
   if(argc == 1) {
-    fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout] [-n]\n", argv[0]);
+    fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout_multiplier] [-n]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
 
@@ -69,7 +69,7 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
       case 'd':
         {
           double d = strtod(optarg, NULL);
-          if(!(d < 1e-15)) args->td = d;
+          if(!(d < 1e-15)) args->td = d*args->tau;
           break;
         }
       case 'n':
@@ -78,7 +78,7 @@ void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
           break;
         }
       default:
-        fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout] [-n]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-P npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d timeout_multiplier] [-n]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
