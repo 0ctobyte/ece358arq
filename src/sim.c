@@ -25,8 +25,8 @@ void sim_gen_ack(sim_state_t *state, double time, uint64_t rn, bool corrupted) {
 }
 
 void sim_gen_timeout(sim_state_t *state, sim_inputs_t *inputs) {
-  double transmission_delay = ((double)(inputs->H+inputs->l))/inputs->C;
-  state->td = state->ti - (transmission_delay * ((state->sn-state->P) % (inputs->N+1))) + transmission_delay + inputs->td;
+  double transmission_delay = ((double)(inputs->H+inputs->l)*8.0)/inputs->C;
+  state->td = state->ti + transmission_delay + inputs->td;
   es_event_t timeout = {.event_type = TIMEOUT, .time = state->td, .rn = state->sn, .corrupted = false};
   es_pq_enqueue(state->es, timeout);
 }
