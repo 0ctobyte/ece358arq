@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdio.h>
 
 #include "sim.h"
 #include "rv.h"
@@ -37,7 +38,7 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
   // If the # of successfully sent packets is enough, then don't transmit anymore frames
   if(state->Ns == inputs->S) return;
 
-  // Update the sender's time
+  // Increment the timeout counter
   ++state->Nt;
 
   // Schedule all frames in the buffer to be Retransmitted
@@ -47,11 +48,22 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
 }
 
 void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
+  if(state->Ns == inputs->S) return;
+
+
+  // Check if RN is a valid ack sequence number
+  bool valid_rn = false;
+  for(uint64_t i = 1; i <= inputs->N; ++i) {
+    if(state->event.rn == ((state->P+i) % (inputs->N+1))) {
+      valid_rn = true;
+      break;
+    }
+  }
   // If the sender has received an ack without error, increment P and next expected ack
-  if(!state->event.corrupted && state->event.rn >= ((state->P+1) % (inputs->N+1)) && state->event.rn <= ((state->P+inputs->N) % (inputs->N+1))) {
-    state->P = (state->P + ((state->event.rn-state->P) % (inputs->N+1))) % (inputs->N+1);
-    state->nack = state->P+1;
-    ++state->Ns;
+  if(valid_rn && !state->event.corrupted) {
+    state->Ns += ((inputs->N - state->P + state->event.rn + 1) % (inputs->N+1));
+    state->P = (inputs->N + state->event.rn + 1) % (inputs->N+1);
+    state->nack = (state->P+1) % (inputs->N+1);
 
     // If the # of successfully sent packets is enough, then don't transmit anymore frames
     if(state->Ns == inputs->S) {
@@ -85,7 +97,7 @@ void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) 
 
   sim_channel_t e = _sim_channel(inputs->ber, inputs->tau, state->ti, state->sn, (inputs->H+inputs->l)*8);
 
-  // Increment the sequence number, only if it is not being resent because of a NAK
+  // Increment the sequence number
   state->sn = (state->sn+1) % (inputs->N+1);
   ++state->Np;
 

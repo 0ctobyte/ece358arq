@@ -116,7 +116,7 @@ int32_t main(int32_t argc, char **argv) {
     sim_gen_timeout(&state, &inputs);
     sim_send(&state, &inputs, &outputs);
     for(es_event_t event; es_pq_size(state.es)>0;) {
-      // Keep sending the if no events occur during the transmission of the last packet
+      // Keep sending the no events occur during the transmission of the last packet
       if(es_pq_at(state.es, 1).time > state.ti) {
         sim_send(&state, &inputs, &outputs);
         continue;
