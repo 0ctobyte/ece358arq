@@ -26,17 +26,19 @@ void sim_gen_ack(sim_state_t *state, double time, uint64_t rn, bool corrupted) {
 
 void sim_gen_timeout(sim_state_t *state, sim_inputs_t *inputs) {
   double transmission_delay = ((double)(inputs->H+inputs->l)*8.0)/inputs->C;
-  state->td = state->ti + transmission_delay + inputs->td;
+
+  // Need to rewind time to find the new timeout value
+  state->td = state->ti - (transmission_delay * ((inputs->N - state->P + state->sn + 1) % (inputs->N+1))) + transmission_delay + inputs->td;
   es_event_t timeout = {.event_type = TIMEOUT, .time = state->td, .rn = state->sn, .corrupted = false};
   es_pq_enqueue(state->es, timeout);
 }
 
 void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
-  // Check if the timeout event is invalid
-  if(state->event.time < state->td) return;
-
   // If the # of successfully sent packets is enough, then don't transmit anymore frames
   if(state->Ns == inputs->S) return;
+
+  // Check if the timeout event is invalid
+  if(state->event.time < state->td || state->event.time > state->td) return;
 
   // Increment the timeout counter
   ++state->Nt;
@@ -50,15 +52,15 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
 void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
   if(state->Ns == inputs->S) return;
 
-
-  // Check if RN is a valid ack sequence number
+  // Check if RN is a valid ack sequence number, that must mean it is within the valid range of P+1 to SN mod N+1
   bool valid_rn = false;
-  for(uint64_t i = 1; i <= inputs->N; ++i) {
-    if(state->event.rn == ((state->P+i) % (inputs->N+1))) {
+  for(uint64_t i = ((state->P+1) % (inputs->N+1)); i != ((state->sn+1) % (inputs->N+1)); i = ((i+1) % (inputs->N+1))) {
+    if(state->event.rn == i) {
       valid_rn = true;
       break;
     }
   }
+
   // If the sender has received an ack without error, increment P and next expected ack
   if(valid_rn && !state->event.corrupted) {
     state->Ns += ((inputs->N - state->P + state->event.rn + 1) % (inputs->N+1));
@@ -84,12 +86,12 @@ void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outp
 
 void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
   // Don't send anything if N packets have been sent, wait for a timeout or an ack. Ignore this if enough successfully packets have been sent
-  if(((state->sn-state->P) % (inputs->N+1)) == inputs->N || state->Ns == inputs->S) {
+  if(((inputs->N - state->P + state->sn + 1) % (inputs->N+1)) == inputs->N || state->Ns == inputs->S) {
     state->ti = es_pq_at(state->es, 1).time;
     return;
   }
 
-  // First the sent frame must be passed through the channel
+  // First the sent frame must be passed into the channel
   double transmission_delay = ((double)(inputs->H+inputs->l)*8.0)/inputs->C;
 
   // The time it takes to send the packet completely into the channel 
