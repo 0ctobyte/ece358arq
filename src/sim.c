@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "sim.h"
 #include "rv.h"
 
@@ -23,7 +25,7 @@ void sim_gen_ack(sim_state_t *state, double time, uint64_t rn, bool corrupted) {
 
 void sim_gen_timeout(sim_state_t *state, sim_inputs_t *inputs) {
   double transmission_delay = ((double)(inputs->H+inputs->l))/inputs->C;
-  state->td = state->tc + transmission_delay + inputs->td;
+  state->td = state->ti - (transmission_delay * ((state->sn-state->P) % (inputs->N+1))) + transmission_delay + inputs->td;
   es_event_t timeout = {.event_type = TIMEOUT, .time = state->td, .rn = state->sn, .corrupted = false};
   es_pq_enqueue(state->es, timeout);
 }
@@ -36,47 +38,57 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
   if(state->Ns == inputs->S) return;
 
   // Update the sender's time
-  state->tc = state->event.time;
   ++state->Nt;
 
-  // Retransmit the frame
+  // Schedule all frames in the buffer to be Retransmitted
+  state->sn = state->P;
   sim_gen_timeout(state, inputs);
   sim_send(state, inputs, outputs);
 }
 
 void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
-  // Update the sender's time
-  state->tc = state->event.time;
-
-  // If the sender has received an ack without error, increment sequence number and next expected ack
-  if(!state->event.corrupted && state->event.rn == state->nack) {
-    state->sn = (state->sn+1) % (inputs->N+1);
-    state->nack = (state->nack+1) % (inputs->N+1);
+  // If the sender has received an ack without error, increment P and next expected ack
+  if(!state->event.corrupted && state->event.rn >= ((state->P+1) % (inputs->N+1)) && state->event.rn <= ((state->P+inputs->N) % (inputs->N+1))) {
+    state->P = (state->P + ((state->event.rn-state->P) % (inputs->N+1))) % (inputs->N+1);
+    state->nack = state->P+1;
     ++state->Ns;
 
     // If the # of successfully sent packets is enough, then don't transmit anymore frames
     if(state->Ns == inputs->S) {
-      outputs->tput = (double)(inputs->l*8*state->Ns)/state->tc;
+      outputs->tput = (double)(inputs->l*8*state->Ns)/state->ti;
       return;
     }
 
     // Transmit the next frame
     sim_gen_timeout(state, inputs);
     sim_send(state, inputs, outputs);
-  } else if(inputs->nak) {
+  } else if(inputs->N == 1 && inputs->nak) {
     // If the ACK frame is corrupted but NAK retransmission is enabled, resend the frame
+    state->sn = state->P;
     sim_gen_timeout(state, inputs);
     sim_send(state, inputs, outputs);
   }
 }
 
 void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
-  ++state->Np;
+  // Don't send anything if N packets have been sent, wait for a timeout or an ack. Ignore this if enough successfully packets have been sent
+  if(((state->sn-state->P) % (inputs->N+1)) == inputs->N || state->Ns == inputs->S) {
+    state->ti = es_pq_at(state->es, 1).time;
+    return;
+  }
 
   // First the sent frame must be passed through the channel
   double transmission_delay = ((double)(inputs->H+inputs->l)*8.0)/inputs->C;
-  sim_channel_t e = _sim_channel(inputs->ber, inputs->tau, state->tc+transmission_delay, state->sn, (inputs->H+inputs->l)*8);
- 
+
+  // The time it takes to send the packet completely into the channel 
+  state->ti += transmission_delay;
+
+  sim_channel_t e = _sim_channel(inputs->ber, inputs->tau, state->ti, state->sn, (inputs->H+inputs->l)*8);
+
+  // Increment the sequence number, only if it is not being resent because of a NAK
+  state->sn = (state->sn+1) % (inputs->N+1);
+  ++state->Np;
+
   // If the frame is lost, nothing to do
   if(e.lost) return;
 
@@ -94,7 +106,11 @@ void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) 
 
   // The ACK frame must be passed through the channel
   transmission_delay = (double)(inputs->H*8)/inputs->C;
-  e = _sim_channel(inputs->ber, inputs->tau, state->tcs+transmission_delay, state->nsn, inputs->H*8);
+
+  // The time it takes to send the ACK packet to the channel
+  state->tcs += transmission_delay;
+
+  e = _sim_channel(inputs->ber, inputs->tau, state->tcs, state->nsn, inputs->H*8);
 
   // If the ack is lost, don't create an event
   if(e.lost) return;

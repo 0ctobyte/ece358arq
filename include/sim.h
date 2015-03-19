@@ -2,10 +2,11 @@
 #define __SIM_H__
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "es.h"
 
 #define INPUTS_DEFAULT {.S=10000,.td=2.5*0.005,.N=1,.ber=0.0,.tau=0.005,.H=54,.l=1500,.C=5000000,.nak=false};
-#define STATE_DEFAULT {.sn=0,.nack=1,.nsn=0,.tc=0.0,.tcs=0.0,.td=0.0,.Np=0,.Ns=0,.Nt=0,.event={0,0.0,0,false},es_pq_create(10)}
+#define STATE_DEFAULT {.sn=0,.P=0,.nack=1,.nsn=0,.tc=0.0,.tcs=0.0,.td=0.0,.ti=0.0,.Np=0,.Ns=0,.Nt=0,.event={0,0.0,0,false},es_pq_create(10)}
 #define OUTPUTS_DEFAULT {0}
 
 // Inputs into the simulator
@@ -43,6 +44,9 @@ typedef struct {
   // The sequence number of the current packet being sent by the sender
   uint64_t sn;
 
+  // The sequence number of the oldest packet in the buffer
+  uint64_t P;
+
   // The sender expects this sequence number from the next ACK packet
   uint64_t nack;
 
@@ -57,6 +61,9 @@ typedef struct {
 
   // New timeout value. This is used to invalidate old timeout events in the ES
   double td;
+
+  // The time for the ith packet to be completely sent into the channel
+  double ti;
 
   // Total # of packets sent
   uint64_t Np;

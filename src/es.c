@@ -134,7 +134,7 @@ es_event_t es_pq_dequeue(es_pq_t *pq) {
 }
 
 es_event_t es_pq_at(es_pq_t* pq, uint64_t index) {
-	assert(index <= pq->size || index == 0);
+	assert(index <= pq->size && index > 0);
 	return pq->events[index];
 }
 

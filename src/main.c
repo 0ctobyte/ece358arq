@@ -15,7 +15,7 @@ static char *simulator_types[][2] = {
 };
 
 void parse_cmdline_args(int32_t argc, char **argv, sim_inputs_t *args) {
-  char *optstring = "P:N:c:l:h:t:b:d:n";
+  char *optstring = "S:N:c:l:h:t:b:d:n";
   
   if(argc == 1) {
     fprintf(stderr, "Usage: %s [-S npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t tau] [-b ber] [-d tratio] [-n]\n", argv[0]);
@@ -112,12 +112,16 @@ int32_t main(int32_t argc, char **argv) {
         "\n\td:\t%-25f (The ratio of td/tau)"
         "\n\tnak:\t%-25s (Is NAK enabled?)\n}\n\n", 
         inputs.S,inputs.td,inputs.N,inputs.ber,inputs.C,inputs.H,inputs.l,inputs.tau,inputs.td/inputs.tau,inputs.nak ? "yes" : "no");
-  
+ 
     sim_gen_timeout(&state, &inputs);
     sim_send(&state, &inputs, &outputs);
     for(es_event_t event; es_pq_size(state.es)>0;) {
+      // Keep sending the if no events occur during the transmission of the last packet
+      if(es_pq_at(state.es, 1).time > state.ti) {
+        sim_send(&state, &inputs, &outputs);
+        continue;
+      }
       event = es_pq_dequeue(state.es);
-      //printf("type=%c, time=%f, rn=%llu, has_error=%d\n", event.event_type==0?'T':'A', event.time, event.rn, event.corrupted);
       state.event = event;
       switch(event.event_type) {
         case TIMEOUT:
@@ -134,12 +138,13 @@ int32_t main(int32_t argc, char **argv) {
     } 
 
     printf("\nSTATE\n{\n\tsn:\t%-25llu (Sequence number of sent packet)"
+        "\n\tP:\t%-25llu (Sequence number of the oldest packet in the buffer)"
         "\n\tnack:\t%-25llu (Next expected ACK #)"
         "\n\tnsn:\t%-25llu (Next expected sequence #)"
         "\n\tNp:\t%-25llu (Total # of packets sent)"
         "\n\tNs:\t%-25llu (# of packets sent successfully)"
         "\n\tNt:\t%-25llu (# of timeout events)\n}\n\n", 
-        state.sn, state.nack, state.nsn, state.Np, state.Ns, state.Nt);
+        state.sn, state.P, state.nack, state.nsn, state.Np, state.Ns, state.Nt);
 
     printf("\nOUTPUTS\n{\n\ttput:\t%-25f (Throughput, excluding header bits [bps])\n}\n\n", outputs.tput);
 
