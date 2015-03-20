@@ -14,9 +14,14 @@ Usage: `./sim [-S npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t ta
 * `-l` (The length of a packet in bytes)
 * `-h` (The length of the frame header in bytes)
 * `-t` (Tau, the propagation delay of the channel in seconds)
-* `-b` (The bit error rate (0<=BER<1). Set to 0 for no bit errors)
-* `-d` (The sender's timeout period is set to this value (i.e. timeout/tau) times tau)
+* `-b` (The bit error rate (must be between 0 and 1). Set to 0 for no bit errors)
+* `-d` (The timeout period is set to this value (i.e. timeout/tau) times tau)
 * `-n` (Specify NAK retransmission. If N=1 and this option is given, then the simulator used will be ABP_NAK)
+
+#### Scripts
+* `scripts/run_ABP` to run the ABP simulator and produce the required CSV file
+* `scripts/run_ABP_NAK` to run the ABP_NAK simulator and produce the required CSV file
+* `scripts/run_GBN` to run the GBN simulator and produce the required CSV file
 
 ## Code
 * **src/es.c** - Array (heap) based priority queue implementation
