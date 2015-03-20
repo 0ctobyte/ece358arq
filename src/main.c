@@ -137,14 +137,16 @@ int32_t main(int32_t argc, char **argv) {
       }
     } 
 
+
     printf("\nSTATE\n{\n\tsn:\t%-25llu (Sequence number of next packet to be sent)"
         "\n\tP:\t%-25llu (Sequence number of the oldest packet in the buffer)"
         "\n\tnack:\t%-25llu (Next expected ACK #)"
         "\n\tnsn:\t%-25llu (Next expected sequence #)"
+        "\n\tti:\t%-25f (Simulation time)"
         "\n\tNp:\t%-25llu (Total # of packets sent)"
         "\n\tNs:\t%-25llu (# of packets sent successfully)"
         "\n\tNt:\t%-25llu (# of timeout events)\n}\n\n", 
-        state.sn, state.P, state.nack, state.nsn, state.Np, state.Ns, state.Nt);
+        state.sn, state.P, state.nack, state.nsn, state.ti, state.Np, state.Ns, state.Nt);
 
     printf("\nOUTPUTS\n{\n\ttput:\t%-25f (Throughput, excluding header bits [bps])\n}\n\n", outputs.tput);
 
