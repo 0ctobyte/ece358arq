@@ -105,7 +105,7 @@ int32_t main(int32_t argc, char **argv) {
     uint64_t sim_type = (inputs.N == 1) ? ((inputs.nak) ? 1 : 0) : 2;
     char filename[256];
     FILE *f = NULL;
-    sprintf(filename, "%s.dat", simulator_types[sim_type][0]);
+    sprintf(filename, "%s.out", simulator_types[sim_type][0]);
     if(!no_file) f = fopen(filename, "a+");
     if(!no_file) fprintf(f, "%f %f | ", inputs.tau, inputs.ber);
 

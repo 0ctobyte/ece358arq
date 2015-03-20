@@ -23,13 +23,12 @@ $(PROGRAM): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) $(LIBS) -o $@
 
 clean:
-	$(RM) -f $(OBJS)
-	$(RM) -f *.png *.dot *.pdf *.dat *.svg
+	$(RM) -f $(OBJS) $(PROGRAM)
 
 %.o: %.c Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 distclean:
 	$(RM) -f $(OBJS) $(PROGRAM)
-	$(RM) -f *.png *.dot *.pdf *.dat *.svg
+	$(RM) -f *.csv *.out *.png *.dot *.pdf *.dat *.svg
 

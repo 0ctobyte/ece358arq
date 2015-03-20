@@ -4,7 +4,7 @@ import os, pickle
 from subprocess import call
 
 args = [(5e-3, 0.0), (5e-3, 1e-5), (5e-3, 1e-4), (250e-3, 0.0), (250e-3, 1e-5), (250e-3, 1e-4)]
-sim_type = "ABP"
+sim_type = "GBN"
 N = 1 if sim_type == "ABP" or sim_type == "ABP_NAK" else 4
 nak = ["-n"] if sim_type == "ABP_NAK" else [] 
 
