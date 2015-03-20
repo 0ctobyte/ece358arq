@@ -22,6 +22,7 @@ Usage: `./sim [-S npackets] [-N wsize] [-c bps] [-l plength] [-h hlength] [-t ta
 * `scripts/run_ABP` to run the ABP simulator and produce the required CSV file
 * `scripts/run_ABP_NAK` to run the ABP_NAK simulator and produce the required CSV file
 * `scripts/run_GBN` to run the GBN simulator and produce the required CSV file
+* `scripts/plot` to generate png images of all the required plots. The above scripts must be run before this.
 
 ## Code
 * **src/es.c** - Array (heap) based priority queue implementation
