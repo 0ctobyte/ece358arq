@@ -1,0 +1,48 @@
+#!/usr/bin/env python2.6
+
+import os, pickle, pylab
+
+figure = 0
+
+# Change to the parent directory
+os.chdir(os.path.dirname(os.path.realpath(__file__)) + "/..")
+
+pylab.rc('font', **{'family':'sans-serif','sans-serif':['Helvetica']})
+
+data_TRATIO = [2.5, 5.0, 7.5, 10.0, 12.5]
+ber_tau2 = [(r"10", r"0"), (r"10", r"5"), (r"10", r"4"), (r"500", r"0"), (r"500", r"5"), (r"500", r"4")]
+
+f = open("ABP.dat")
+data_ABP = pickle.load(f)
+f.close()
+
+f = open("ABP_NAK.dat")
+data_ABP_NAK = pickle.load(f)
+f.close()
+
+f = open("GBN.dat")
+data_GBN = pickle.load(f)
+f.close()
+
+# Plot ABP vs ABP_NAK with BER=0.0 & 2*tau=10 ms
+for i in range(6):
+  pylab.figure(++figure)
+  pylab.clf()
+  pylab.plot(data_TRATIO, data_ABP[i], label="ABP")
+  pylab.plot(data_TRATIO, data_ABP_NAK[i], label="ABP_NAK")
+  pylab.title(r"$\Delta/\tau$ vs Throughput when $BER="+ber_tau2[i][1]+r"$ & $2\tau="+ber_tau2[i][0]+r" ms$")
+  pylab.xlabel(r"$\frac{\Delta}{\tau}$")
+  pylab.ylabel(r"Throughput [bps]")
+  pylab.legend()
+  pylab.savefig("ABP_v_NAK_ber"+ber_tau2[i][1]+"_2tau"+ber_tau2[i][0]+".png")
+
+  pylab.figure(++figure)
+  pylab.clf()
+  pylab.plot(data_TRATIO, data_ABP[i], label="ABP")
+  pylab.plot(data_TRATIO, data_GBN[i], label="GBN")
+  pylab.title(r"$\Delta/\tau$ vs Throughput when $BER="+ber_tau2[i][1]+r"$ & $2\tau="+ber_tau2[i][0]+r" ms$")
+  pylab.xlabel(r"$\frac{\Delta}{\tau}$")
+  pylab.ylabel(r"Throughput [bps]")
+  pylab.legend()
+  pylab.savefig("ABP_v_GBN_ber"+ber_tau2[i][1]+"_2tau"+ber_tau2[i][0]+".png")
+
