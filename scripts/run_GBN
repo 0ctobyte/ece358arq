@@ -9,13 +9,13 @@ N = 1 if sim_type == "ABP" or sim_type == "ABP_NAK" else 4
 nak = ["-n"] if sim_type == "ABP_NAK" else [] 
 
 # Run make in the parent directory
-os.environ['PATH'] = os.path.abspath("..") + os.environ['PATH']
+os.chdir(os.path.dirname(os.path.realpath(__file__)) + "/..")
 call(["make", "clean"])
 call(["make"])
 
 # Now run the simulator for each case
 for a in args:
-  call(["sim", "-S 10000", "-N " + str(N), "-t " + str(a[0]), "-b " + str(a[1])] + nak)
+  call(["./sim", "-S 10000", "-N " + str(N), "-t " + str(a[0]), "-b " + str(a[1])] + nak)
 
 data = []
 
