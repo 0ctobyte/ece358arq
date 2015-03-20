@@ -45,8 +45,9 @@ void sim_event_timeout(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *
 
   // Schedule all frames in the buffer to be Retransmitted
   state->sn = state->P;
+
+  // Generate a new timeout event
   sim_gen_timeout(state, inputs);
-  sim_send(state, inputs, outputs);
 }
 
 void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
@@ -63,6 +64,7 @@ void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outp
 
   // If the sender has received an ack without error, increment P and next expected ack
   if(valid_rn && !state->event.corrupted) {
+    // Update the successful packet counter
     state->Ns += ((inputs->N - state->P + state->event.rn + 1) % (inputs->N+1));
     state->P = (inputs->N + state->event.rn + 1) % (inputs->N+1);
     state->nack = (state->P+1) % (inputs->N+1);
@@ -73,19 +75,19 @@ void sim_event_ack(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outp
       return;
     }
 
-    // Transmit the next frame
+    // Generate a new timeout event
     sim_gen_timeout(state, inputs);
-    sim_send(state, inputs, outputs);
   } else if(inputs->N == 1 && inputs->nak) {
-    // If the ACK frame is corrupted but NAK retransmission is enabled, resend the frame
+    // If the ACK frame is corrupted but NAK retransmission is enabled, schedule the frame to be resent
     state->sn = state->P;
+
+    // Renew the timeout event
     sim_gen_timeout(state, inputs);
-    sim_send(state, inputs, outputs);
   }
 }
 
 void sim_send(sim_state_t *state, sim_inputs_t *inputs, sim_outputs_t *outputs) {
-  // Don't send anything if N packets have been sent, wait for a timeout or an ack. Ignore this if enough successfully packets have been sent
+  // Don't send anything if N packets have been sent (Or enough successful packets have been sent). Wait for a timeout or an ack.
   if(((inputs->N - state->P + state->sn + 1) % (inputs->N+1)) == inputs->N || state->Ns == inputs->S) {
     state->ti = es_pq_at(state->es, 1).time;
     return;
