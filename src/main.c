@@ -137,7 +137,7 @@ int32_t main(int32_t argc, char **argv) {
       }
     } 
 
-    printf("\nSTATE\n{\n\tsn:\t%-25llu (Sequence number of sent packet)"
+    printf("\nSTATE\n{\n\tsn:\t%-25llu (Sequence number of next packet to be sent)"
         "\n\tP:\t%-25llu (Sequence number of the oldest packet in the buffer)"
         "\n\tnack:\t%-25llu (Next expected ACK #)"
         "\n\tnsn:\t%-25llu (Next expected sequence #)"
